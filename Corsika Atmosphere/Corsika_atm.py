@@ -181,7 +181,7 @@ class EarthsAtmosphere(with_metaclass(ABCMeta)):
         self._s_h2X = interp1d(h_intp, np.log(X_intp), kind='cubic', fill_value='extrapolate')
         self._s_X2rho = interp1d(X_int, vec_rho_l(dl_vec), kind='cubic', fill_value='extrapolate')
         self._s_lX2h = interp1d(np.log(X_intp)[::-1], h_intp[::-1], kind='cubic', fill_value='extrapolate')
-        print("printed x2rho",self._s_X2rho)
+        #print("printed x2rho",self._s_X2rho)
         return X_int
     @property
     def max_X(self):
@@ -232,8 +232,8 @@ class EarthsAtmosphere(with_metaclass(ABCMeta)):
         Args:
           theta_deg (float): zenith angle :math:`\\theta` at detector
         """
-        if theta_deg < 0.0 or theta_deg > self.max_theta:
-            raise Exception("Zenith angle not in allowed range.")
+        #if theta_deg < 0.0 or theta_deg > self.max_theta:
+            #raise Exception("Zenith angle not in allowed range.")
 
         self.thrad = theta_rad(theta_deg)
         self.theta_deg = theta_deg
@@ -298,8 +298,8 @@ class EarthsAtmosphere(with_metaclass(ABCMeta)):
         )
         dl_vec = np.linspace(0, path_length1, n_steps)
         X_int = cumulative_trapezoid(vec_rho_l(dl_vec), dl_vec)
-        print("max X", X_int[-1])
-        print("max height", h_vec[0])
+        #print("max X", X_int[-1])
+        #print("max height", h_vec[0])
         return(h_vec, X_int)  
         
     def hVrho_plot(self, theta_deg):
@@ -684,11 +684,22 @@ class LipariAtmosphere(EarthsAtmosphere):
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
+    from Corsika_atm import CorsikaAtmosphere
+    plt.figure(figsize=(5, 4))
+    plt.title("CORSIKA atmospheres")
+    
     cka_obj = CorsikaAtmosphere("USStd", None)
-    lip_obj = LipariAtmosphere()
-    alp = [10.0, 70.0, 95.0]
+    
+    alp = [0.0, 15.0, 30.0, 45.0, 60.0, 75.0, 90.0, 95.0]
     for a in alp:
-        print("Lipari model at ",a," degrees")
-        h_vec, rho_val = lip_obj.hVx_plot(a)
-        print("Corsika model at ",a," degrees")
-        h_vec, rho_val = cka_obj.hVx_plot(a) 
+        cka_obj.set_theta(a)
+        h_vec, X_int = cka_obj.hVx_plot(a)
+        plt.plot(X_int, h_vec/1e5, lw=1.5, label=f'{a} degrees')
+    plt.xscale('log')
+    plt.xlim(10**(-3), 10**7)
+    plt.ylim(0.0, 100.0)
+    plt.xlabel('Slant Depth $X$ (g/cm$^2$)')
+    plt.ylabel('Height (km)')
+    plt.legend(title='Theta angles')
+    plt.grid(True)
+    plt.show()
